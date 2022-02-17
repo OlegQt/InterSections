@@ -40,6 +40,7 @@ private:
 	HRESULT CreateTarget();
 	HRESULT Render();
 	void DiscardDeviceResources();
+	void ResizeTarget();
 
 	struct WndButton
 	{

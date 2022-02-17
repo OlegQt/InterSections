@@ -79,7 +79,7 @@ HRESULT Engine::Initialize()
 	// Create the window.
 	//FLOAT dpiX, dpiY;
 	//m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-	this->hWnd = CreateWindow(L"D2DDemoApp", L"app D2D", WS_OVERLAPPED | WS_SYSMENU, 0, 0, 500, 500, NULL, NULL, this->hInst, this);
+	this->hWnd = CreateWindow(L"D2DDemoApp", L"app D2D", WS_OVERLAPPED | WS_SYSMENU|WS_SIZEBOX, 0, 0, 500, 500, NULL, NULL, this->hInst, this);
 	if (!this->hWnd) return S_FALSE;
 	SetTimer(hWnd, TIMER1, 10, NULL);
 	CreateWindow(L"Button", L"but", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
@@ -137,6 +137,13 @@ LRESULT Engine::Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(NULL);
 		return 0;
 	}
+	if (message == WM_SIZE)
+	{
+		//this->DiscardDeviceResources();
+		this->ResizeTarget();
+
+
+	}
 	if (message == WM_LBUTTONDOWN)
 	{
 		// Достаем координаты щелчка
@@ -192,9 +199,9 @@ HRESULT Engine::CreateDeviceIndependentResources()
 }
 HRESULT Engine::CreateTarget()
 {
-	if (this->pRenderTarget) return S_FALSE; // Âûõîäèì, åñëè ñöåíà óæå ñîçäàíà
+	if (this->pRenderTarget) return S_FALSE; // If render target is already created
 
-	// Ïîëó÷àåì ðàçìåðû îêíà
+	// Get windows size into RECT struct
 	RECT rc;
 	GetClientRect(this->hWnd, &rc);
 	D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
@@ -205,12 +212,30 @@ HRESULT Engine::CreateTarget()
 		D2D1::HwndRenderTargetProperties(this->hWnd, size),
 		&this->pRenderTarget
 	);
+	
 	if (SUCCEEDED(hr)) this->pRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 	if (SUCCEEDED(hr) && !pBrush) hr = pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &this->pBrush);
 
 
 
 	return hr;
+
+}
+
+void Engine::ResizeTarget()
+{
+	if (this->pRenderTarget)
+	{
+
+		// Get windows size into RECT struct
+		RECT rc;
+		GetClientRect(this->hWnd, &rc);
+		D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
+
+		// Resuze Direct2D render target
+		this->pRenderTarget->Resize(size);
+		InvalidateRect(this->hWnd, NULL, FALSE);
+	}
 
 }
 HRESULT Engine::Render()
@@ -223,19 +248,6 @@ HRESULT Engine::Render()
 	this->pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	this->pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Gray));
 	// Draw here
-
-	hr = m_pPathGeometry->Open(&pSink);
-	// Push geometry to sink
-	if (SUCCEEDED(hr))
-	{
-		pSink->BeginFigure(D2D1::Point2F(100, 100), D2D1_FIGURE_BEGIN_FILLED);
-		pSink->AddLine(D2D1::Point2F(200, 100));
-		pSink->AddLine(D2D1::Point2F(200, 150));
-		pSink->EndFigure(D2D1_FIGURE_END_CLOSED);
-		hr = pSink->Close();		
-		if (FAILED(hr)) return hr;		
-	}	
-	this->pRenderTarget->FillGeometry(m_pPathGeometry, this->pBrush);  // Draw geometry
 
 	// GUI Drawings	
 	if (true)
