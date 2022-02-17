@@ -18,8 +18,11 @@ Engine::Engine(HINSTANCE h)
 
 	this->btnA = { 10,10,20,20 };
 
+	//code below should be in logic class
 	this->Aparticle.pos = { 50.0f,100.0f };
+	this->Aparticle.V = { 0.05f,0.1f };
 	this->Bparticle.pos = { 80.0f,100.0f };
+	this->Bparticle.V = { -0.05f,-0.05f };
 }
 Engine::~Engine()
 {
@@ -243,6 +246,8 @@ void Engine::ResizeTarget()
 
 HRESULT Engine::Render()
 {
+	this->VectorArray.clear();
+	this->CalcilateLogic();
 	HRESULT hr = this->CreateTarget();
 	if (FAILED(hr)) return hr;
 	if (!m_pPathGeometry) return S_FALSE;
@@ -253,9 +258,13 @@ HRESULT Engine::Render()
 	// Draw here
 	this->RenderParticle(&this->Aparticle);
 	this->RenderParticle(&this->Bparticle);
-	this->RenderVector_offset(&this->Bparticle.pos,& this->Aparticle.pos);
 
+	
 
+	for (int iter = 0; iter < VectorArray.size(); iter++)
+	{
+		this->RenderRline(&VectorArray.at(iter));
+	}
 	// GUI Drawings	
 	if (true)
 	{
@@ -282,11 +291,13 @@ void Engine::RenderParticle(element*pE)
 	if (pE->mass == 0) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkRed));
 	this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), 5.0f, 5.0f), this->pBrush, 1.0f, NULL);
 }
-void Engine::RenderVector_offset(rvector*pE, rvector*offset)
+void Engine::RenderRline(rLine * pL)
 {
+	if(pL->type==BOND) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Firebrick));
+	else if(pL->type == VELOCITY) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkBlue));
 	this->pRenderTarget->DrawLine(
-		D2D1::Point2F(offset->x, offset->y),
-		D2D1::Point2F(offset->x+pE->x, offset->y+pE->y),
+		D2D1::Point2F(pL->a.x, pL->a.y),
+		D2D1::Point2F(pL->b.x, pL->b.y),
 		this->pBrush, 1.0f, NULL);
 }
 
@@ -317,4 +328,28 @@ void Engine::DiscardDeviceResources()
 		this->pSink->Release();
 		this->pSink = nullptr;
 	}
+}
+
+
+void Engine::CalcilateLogic()
+{
+	this->Aparticle.pos.x += Aparticle.V.x;
+	this->Aparticle.pos.y += Aparticle.V.y;
+
+	this->Bparticle.pos.x += Bparticle.V.x;
+	this->Bparticle.pos.y += Bparticle.V.y;
+
+	rvector v =  CMatrix::SumVectors(this->Aparticle.pos, Bparticle.pos, -1);
+	rLine line = { Bparticle.pos,Aparticle.pos ,BOND};
+	this->VectorArray.push_back(line);
+
+	v = CMatrix::ScaleVector(Aparticle.V, 0.6f);
+	v = CMatrix::SumVectors(this->Aparticle.pos,v, 1);
+	line = {Aparticle.pos,v,VELOCITY};
+	this->VectorArray.push_back(line);
+
+	v = CMatrix::ScaleVector(Bparticle.V, 0.6f);
+	v = CMatrix::SumVectors(this->Bparticle.pos, v, 1);
+	line = { Bparticle.pos,v,VELOCITY };
+	this->VectorArray.push_back(line);
 }

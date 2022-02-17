@@ -18,3 +18,29 @@ void  CMatrix::sum(rvector* pArrow, float x, float y)
 	pArrow->x += x;
 	pArrow->y += y;
 }
+
+rvector CMatrix::SumVectors(rvector a, rvector b, int m)
+{
+	rvector c = { 0.9f,0.0f };
+	if (m == 1)
+	{
+		c.x = a.x + b.x;
+		c.y = a.y + b.y;
+
+	}
+	else if (m == -1)
+	{
+		c.x = -a.x + b.x;
+		c.y = -a.y + b.y;
+	}
+	return c;
+}
+
+rvector CMatrix::ScaleVector(rvector a, float scale)
+{
+	scale = 100 / scale;
+	a.x *= scale;
+	a.y *= scale;
+	return a;
+}
+

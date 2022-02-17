@@ -2,9 +2,10 @@
 #include <windows.h>
 #include <d2d1.h>
 #include <d2d1helper.h>
+#include <vector>
 
 #include "CMatrix.h"
-
+#include "Element.h"
 
 #define ID_BUTTON_A 22
 #define TIMER1 1001
@@ -20,19 +21,13 @@ public:
 
 	// Process and dispatch messages
 	void RunMessageLoop();
+	void CalcilateLogic();
 
 	// The windows procedure.
 	static LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
 	LRESULT Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 public:
-	struct rvector {
-		float x, y;
-	};
-	struct element {
-		rvector pos;
-		rvector V;
-		float mass;
-	};
+
 private:
 	HINSTANCE hInst;
 	HWND hWnd;
@@ -53,7 +48,7 @@ private:
 	void ResizeTarget();
 
 	void RenderParticle(element *);
-	void RenderVector_offset(rvector*, rvector*);
+	void RenderRline(rLine * line);
 
 	struct WndButton
 	{
@@ -67,4 +62,6 @@ private:
 	WndButton btnA;
 
 	element Aparticle,Bparticle;
+	std::vector <rLine> VectorArray;
+	
 };
