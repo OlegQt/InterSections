@@ -246,7 +246,7 @@ HRESULT Engine::Render()
 
 	this->pRenderTarget->BeginDraw();
 	this->pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-	this->pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Gray));
+	this->pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
 	// Draw here
 
 	// GUI Drawings	

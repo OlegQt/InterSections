@@ -22,7 +22,15 @@ public:
 	// The windows procedure.
 	static LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
 	LRESULT Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
+public:
+	struct rvector{
+		float x,y;
+	};
+	struct element {
+		rvector pos;
+		rvector V;
+		float mass;
+	};
 private:
 	HINSTANCE hInst;
 	HWND hWnd;
@@ -52,4 +60,6 @@ private:
 		bool pushed;
 	};
 	WndButton btnA;
+
+	element Aparticle,Bparticle;
 };
