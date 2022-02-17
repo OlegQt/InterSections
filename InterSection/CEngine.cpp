@@ -20,7 +20,7 @@ Engine::Engine(HINSTANCE h)
 
 	//code below should be in logic class
 	this->Aparticle.pos = { 50.0f,100.0f };
-	this->Aparticle.V = { 0.05f,0.1f };
+	this->Aparticle.V = { 0.1f,0.1f };
 	this->Bparticle.pos = { 80.0f,100.0f };
 	this->Bparticle.V = { -0.05f,-0.05f };
 }
@@ -295,6 +295,7 @@ void Engine::RenderRline(rLine * pL)
 {
 	if(pL->type==BOND) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Firebrick));
 	else if(pL->type == VELOCITY) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkBlue));
+	else if (pL->type == PROECTION) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
 	this->pRenderTarget->DrawLine(
 		D2D1::Point2F(pL->a.x, pL->a.y),
 		D2D1::Point2F(pL->b.x, pL->b.y),
@@ -333,23 +334,40 @@ void Engine::DiscardDeviceResources()
 
 void Engine::CalcilateLogic()
 {
-	this->Aparticle.pos.x += Aparticle.V.x;
-	this->Aparticle.pos.y += Aparticle.V.y;
+	if (btnA.pushed)
+	{
+		this->Aparticle.pos.x += Aparticle.V.x;
+		this->Aparticle.pos.y += Aparticle.V.y;
 
-	this->Bparticle.pos.x += Bparticle.V.x;
-	this->Bparticle.pos.y += Bparticle.V.y;
+		this->Bparticle.pos.x += Bparticle.V.x;
+		this->Bparticle.pos.y += Bparticle.V.y;
+	}
+	rvector v{100,0};
+	rLine line;
+	rvector AB =  CMatrix::SumVectors(this->Aparticle.pos, Bparticle.pos, -1);
+	float betta = CMatrix::GetCosAngle(AB, { 1.0f,0.0f });
 
-	rvector v =  CMatrix::SumVectors(this->Aparticle.pos, Bparticle.pos, -1);
-	rLine line = { Bparticle.pos,Aparticle.pos ,BOND};
+	v = CMatrix::Rotate(v, acos(betta));
+	v = CMatrix::SumVectors(v, { 100.0f,100.0f }, 1);
+	line = { { 100.0f,100.0f } ,v,BOND };
+	this->VectorArray.push_back(line);
+
+
+	line = { Bparticle.pos,Aparticle.pos ,BOND};
 	this->VectorArray.push_back(line);
 
 	v = CMatrix::ScaleVector(Aparticle.V, 0.6f);
 	v = CMatrix::SumVectors(this->Aparticle.pos,v, 1);
 	line = {Aparticle.pos,v,VELOCITY};
-	this->VectorArray.push_back(line);
+	this->VectorArray.push_back(line);	
+
 
 	v = CMatrix::ScaleVector(Bparticle.V, 0.6f);
 	v = CMatrix::SumVectors(this->Bparticle.pos, v, 1);
 	line = { Bparticle.pos,v,VELOCITY };
 	this->VectorArray.push_back(line);
+
+
+
+	
 }
