@@ -17,6 +17,9 @@ Engine::Engine(HINSTANCE h)
 
 
 	this->btnA = { 10,10,20,20 };
+
+	this->Aparticle.pos = { 50.0f,100.0f };
+	this->Bparticle.pos = { 80.0f,100.0f };
 }
 Engine::~Engine()
 {
@@ -221,7 +224,6 @@ HRESULT Engine::CreateTarget()
 	return hr;
 
 }
-
 void Engine::ResizeTarget()
 {
 	if (this->pRenderTarget)
@@ -238,6 +240,7 @@ void Engine::ResizeTarget()
 	}
 
 }
+
 HRESULT Engine::Render()
 {
 	HRESULT hr = this->CreateTarget();
@@ -248,6 +251,10 @@ HRESULT Engine::Render()
 	this->pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	this->pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
 	// Draw here
+	this->RenderParticle(&this->Aparticle);
+	this->RenderParticle(&this->Bparticle);
+	this->RenderVector_offset(&this->Bparticle.pos,& this->Aparticle.pos);
+
 
 	// GUI Drawings	
 	if (true)
@@ -269,6 +276,20 @@ HRESULT Engine::Render()
 	}
 	return S_OK;
 }
+void Engine::RenderParticle(element*pE)
+{
+	// pE - pointer to Element
+	if (pE->mass == 0) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkRed));
+	this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), 5.0f, 5.0f), this->pBrush, 1.0f, NULL);
+}
+void Engine::RenderVector_offset(rvector*pE, rvector*offset)
+{
+	this->pRenderTarget->DrawLine(
+		D2D1::Point2F(offset->x, offset->y),
+		D2D1::Point2F(offset->x+pE->x, offset->y+pE->y),
+		this->pBrush, 1.0f, NULL);
+}
+
 void Engine::DiscardDeviceResources()
 {
 	if (this->m_pDirect2dFactory)

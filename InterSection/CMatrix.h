@@ -2,7 +2,6 @@
 #include <windows.h>
 #include <iostream>
 #include <cmath>
-#include "CArrow.h"
 #define PI 3.14159265
 
 class CMatrix
@@ -10,7 +9,13 @@ class CMatrix
 	CMatrix();
 	~CMatrix();
 public:
-	static void  rotate(CArrow *,float);
-	static void sum(CArrow *, float x, float y);
+	struct rvector {
+		float x, y;
+	};
+public:
+	static void  rotate(rvector*,float);
+	static void sum(rvector *, float x, float y);
+
+
 };
 
