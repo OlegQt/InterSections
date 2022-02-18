@@ -14,11 +14,11 @@ class CMatrix
 public:
 
 public:
-	static rvector  Rotate(rvector,float);
+	static rvector Rotate(rvector,float);
 	static rvector SumVectors(rvector,rvector,int);
 	static rvector ScaleVector(rvector,float);
 	static rvector GetProection(rvector a, rvector b);
-	static float GetCosAngle(rvector a, rvector b);
+	static float GetAngle(rvector a, rvector b);
 	static float GetVectorLength(rvector a);
 
 };

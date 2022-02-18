@@ -19,5 +19,5 @@ struct rLine {
 struct element {
 	rvector pos;
 	rvector V;
-	float mass;
+	float mass,diameter;
 };

@@ -20,9 +20,14 @@ Engine::Engine(HINSTANCE h)
 
 	//code below should be in logic class
 	this->Aparticle.pos = { 50.0f,100.0f };
-	this->Aparticle.V = { 0.1f,0.1f };
-	this->Bparticle.pos = { 80.0f,100.0f };
-	this->Bparticle.V = { -0.05f,-0.05f };
+	this->Aparticle.V = { 0.01f,0.01f };
+	this->Aparticle.diameter = 10;
+	this->Aparticle.mass = 10;
+
+	this->Bparticle.pos = { 120.0f,100.0f };
+	this->Bparticle.V = { -0.1f,0.0f };
+	this->Bparticle.diameter = 20;
+	this->Bparticle.mass = 20;
 }
 Engine::~Engine()
 {
@@ -85,7 +90,7 @@ HRESULT Engine::Initialize()
 	// Create the window.
 	//FLOAT dpiX, dpiY;
 	//m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
-	this->hWnd = CreateWindow(L"D2DDemoApp", L"app D2D", WS_OVERLAPPED | WS_SYSMENU|WS_SIZEBOX, 0, 0, 500, 500, NULL, NULL, this->hInst, this);
+	this->hWnd = CreateWindow(L"D2DDemoApp", L"app D2D", WS_OVERLAPPED | WS_SYSMENU | WS_SIZEBOX, 0, 0, 500, 500, NULL, NULL, this->hInst, this);
 	if (!this->hWnd) return S_FALSE;
 	SetTimer(hWnd, TIMER1, 10, NULL);
 	CreateWindow(L"Button", L"but", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
@@ -218,7 +223,7 @@ HRESULT Engine::CreateTarget()
 		D2D1::HwndRenderTargetProperties(this->hWnd, size),
 		&this->pRenderTarget
 	);
-	
+
 	if (SUCCEEDED(hr)) this->pRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 	if (SUCCEEDED(hr) && !pBrush) hr = pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &this->pBrush);
 
@@ -259,7 +264,7 @@ HRESULT Engine::Render()
 	this->RenderParticle(&this->Aparticle);
 	this->RenderParticle(&this->Bparticle);
 
-	
+
 
 	for (int iter = 0; iter < VectorArray.size(); iter++)
 	{
@@ -285,21 +290,26 @@ HRESULT Engine::Render()
 	}
 	return S_OK;
 }
-void Engine::RenderParticle(element*pE)
+void Engine::RenderParticle(element* pE)
 {
 	// pE - pointer to Element
 	if (pE->mass == 0) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkRed));
-	this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), 5.0f, 5.0f), this->pBrush, 1.0f, NULL);
+	this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), pE->diameter, pE->diameter), this->pBrush, 1.0f, NULL);
 }
-void Engine::RenderRline(rLine * pL)
+void Engine::RenderRline(rLine* pL)
 {
-	if(pL->type==BOND) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Firebrick));
-	else if(pL->type == VELOCITY) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkBlue));
+	float LineWidth = 1.0f;
+	if (pL->type == BOND)
+	{
+		this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Firebrick));
+		LineWidth = 2.0f;
+	}
+	else if (pL->type == VELOCITY) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkBlue));
 	else if (pL->type == PROECTION) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
 	this->pRenderTarget->DrawLine(
 		D2D1::Point2F(pL->a.x, pL->a.y),
 		D2D1::Point2F(pL->b.x, pL->b.y),
-		this->pBrush, 1.0f, NULL);
+		this->pBrush, LineWidth, NULL);
 }
 
 void Engine::DiscardDeviceResources()
@@ -334,40 +344,108 @@ void Engine::DiscardDeviceResources()
 
 void Engine::CalcilateLogic()
 {
+
+	rvector AB{ 0,0 };
+	rvector V{ 0,0 };
+	rvector Offset{ 0,0 };
+	float betta = 0;
+	rLine line;
+
+	AB = CMatrix::SumVectors(Aparticle.pos, Bparticle.pos, -1);
 	if (btnA.pushed)
 	{
-		this->Aparticle.pos.x += Aparticle.V.x;
-		this->Aparticle.pos.y += Aparticle.V.y;
 
-		this->Bparticle.pos.x += Bparticle.V.x;
-		this->Bparticle.pos.y += Bparticle.V.y;
+		if (CMatrix::GetVectorLength(AB) <= Aparticle.diameter + Bparticle.diameter + 0.0f)
+		{
+
+			betta = CMatrix::GetAngle(AB, { 1.0f,0.0f }); // Calculate angle between radius vector from A-point ro B-point and OX axis
+			rvector Va = Aparticle.V; // Take the real velocity  vector in real OXY
+			rvector Vb = Bparticle.V; // Take the real velocity vector in real OXY
+			Va = CMatrix::Rotate(Va, betta); // Rotate velocity (x component is the proection the real velocity on the AB-vector)
+			Vb = CMatrix::Rotate(Vb, betta); // Rotate velocity (x component is the proection the real velocity on the AB-vector)
+
+			float DeltaMass = Bparticle.mass - Aparticle.mass;
+			float SummMass = Bparticle.mass + Aparticle.mass;
+			float Vax = (2 * Bparticle.mass * Vb.x - Va.x * DeltaMass) / SummMass; // Calculate Vx for A-particle after collusion
+			float Vbx = (2 * Aparticle.mass * Va.x + Vb.x * DeltaMass) / SummMass; // Calculate Vx for B-particle after collusion
+			Va.x = Vax;
+			Vb.x = Vbx;
+
+			Aparticle.V = CMatrix::Rotate(Va, -betta); // Rotate back to take new velocities after collusion
+			Bparticle.V = CMatrix::Rotate(Vb, -betta); // Rotate back to take new velocities after collusion
+
+			// If both particles stuck in each others
+			// Calculate the overlay distance and moove each particl with its new speed on the half of this distancce
+			
+			float delta = CMatrix::GetVectorLength(AB) - (Aparticle.diameter + Bparticle.diameter); // Calculate the overlay
+			if (delta < 1.0f) delta = 1.0f;
+			float time = (0.5f * delta) / CMatrix::GetVectorLength(Aparticle.V); //Calculate time to moove from stuck
+
+		
+			Aparticle.pos.x = Aparticle.pos.x + (time * Aparticle.V.x); 
+			Aparticle.pos.y = Aparticle.pos.y + (time * Aparticle.V.y);
+
+			Bparticle.pos.x = Bparticle.pos.x + (time * Bparticle.V.x);
+			Bparticle.pos.y = Bparticle.pos.y + (time * Bparticle.V.y);
+		}
+		else
+		{
+			this->Aparticle.pos.x += Aparticle.V.x;
+			this->Aparticle.pos.y += Aparticle.V.y;
+
+			this->Bparticle.pos.x += Bparticle.V.x;
+			this->Bparticle.pos.y += Bparticle.V.y;
+		}
 	}
-	rvector v{100,0};
-	rLine line;
-	rvector AB =  CMatrix::SumVectors(this->Aparticle.pos, Bparticle.pos, -1);
-	float betta = CMatrix::GetCosAngle(AB, { 1.0f,0.0f });
 
-	v = CMatrix::Rotate(v, acos(betta));
-	v = CMatrix::SumVectors(v, { 100.0f,100.0f }, 1);
-	line = { { 100.0f,100.0f } ,v,BOND };
+
+
+	line = { Bparticle.pos,Aparticle.pos ,BOND };
 	this->VectorArray.push_back(line);
 
 
-	line = { Bparticle.pos,Aparticle.pos ,BOND};
+	V = Aparticle.V;
+	Offset = Aparticle.pos;
+	V = CMatrix::ScaleVector(V, 2.1f);
+	V = CMatrix::SumVectors(V, Offset, 1);
+	line = { Offset ,V,VELOCITY };
 	this->VectorArray.push_back(line);
 
-	v = CMatrix::ScaleVector(Aparticle.V, 0.6f);
-	v = CMatrix::SumVectors(this->Aparticle.pos,v, 1);
-	line = {Aparticle.pos,v,VELOCITY};
-	this->VectorArray.push_back(line);	
+	V = Bparticle.V;
+	Offset = Bparticle.pos;
+	V = CMatrix::ScaleVector(V, 2.1f);
+	V = CMatrix::SumVectors(V, Offset, 1);
+	line = { Offset ,V,VELOCITY };
+	this->VectorArray.push_back(line);
+
+	//Draw proections A velosity
+	//Offset (300,300)
+	Offset = { 300.0f,300.0f };
+	//Offset = Aparticle.pos;
+	V = Aparticle.V;
+	V = CMatrix::Rotate(V, betta);
+	V = CMatrix::ScaleVector(V, 2.1f);
+	V = CMatrix::SumVectors(V, Offset, 1);
+	line = { Offset ,V,PROECTION };
+	this->VectorArray.push_back(line);
 
 
-	v = CMatrix::ScaleVector(Bparticle.V, 0.6f);
-	v = CMatrix::SumVectors(this->Bparticle.pos, v, 1);
-	line = { Bparticle.pos,v,VELOCITY };
+	V = CMatrix::Rotate(AB, betta);
+	V = CMatrix::SumVectors(V, Offset, 1);
+	line = { Offset,V,PROECTION };
+	this->VectorArray.push_back(line);
+
+	//Draw proections A velosity
+	//Offset (300,300)
+	Offset = CMatrix::SumVectors(Offset, CMatrix::Rotate(AB, betta), 1);
+	//Offset = CMatrix::SumVectors(Aparticle.pos, CMatrix::Rotate(AB, betta), 1);
+	V = Bparticle.V;
+	V = CMatrix::Rotate(V, betta);
+	V = CMatrix::ScaleVector(V, 2.1f);
+	V = CMatrix::SumVectors(V, Offset, 1);
+	line = { Offset ,V,PROECTION };
 	this->VectorArray.push_back(line);
 
 
 
-	
 }
