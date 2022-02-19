@@ -141,11 +141,13 @@
   <ItemGroup>
     <ClCompile Include="CEngine.cpp" />
     <ClCompile Include="CMatrix.cpp" />
+    <ClCompile Include="CQuadTree.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CEngine.h" />
     <ClInclude Include="CMatrix.h" />
+    <ClInclude Include="CQuadTree.h" />
     <ClInclude Include="Element.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

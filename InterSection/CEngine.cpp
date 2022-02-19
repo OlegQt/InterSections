@@ -20,14 +20,14 @@ Engine::Engine(HINSTANCE h)
 
 	//code below should be in logic class
 	this->Aparticle.pos = { 50.0f,100.0f };
-	this->Aparticle.V = { 0.01f,0.01f };
-	this->Aparticle.diameter = 10;
-	this->Aparticle.mass = 10;
+	this->Aparticle.V = { 0.9f,0.0f };
+	this->Aparticle.diameter = 4;
+	this->Aparticle.mass = 4;
 
 	this->Bparticle.pos = { 120.0f,100.0f };
-	this->Bparticle.V = { -0.1f,0.0f };
+	this->Bparticle.V = { 0.0f,0.0f };
 	this->Bparticle.diameter = 20;
-	this->Bparticle.mass = 20;
+	this->Bparticle.mass = 50;
 }
 Engine::~Engine()
 {
@@ -340,8 +340,6 @@ void Engine::DiscardDeviceResources()
 		this->pSink = nullptr;
 	}
 }
-
-
 void Engine::CalcilateLogic()
 {
 
@@ -417,35 +415,4 @@ void Engine::CalcilateLogic()
 	V = CMatrix::SumVectors(V, Offset, 1);
 	line = { Offset ,V,VELOCITY };
 	this->VectorArray.push_back(line);
-
-	//Draw proections A velosity
-	//Offset (300,300)
-	Offset = { 300.0f,300.0f };
-	//Offset = Aparticle.pos;
-	V = Aparticle.V;
-	V = CMatrix::Rotate(V, betta);
-	V = CMatrix::ScaleVector(V, 2.1f);
-	V = CMatrix::SumVectors(V, Offset, 1);
-	line = { Offset ,V,PROECTION };
-	this->VectorArray.push_back(line);
-
-
-	V = CMatrix::Rotate(AB, betta);
-	V = CMatrix::SumVectors(V, Offset, 1);
-	line = { Offset,V,PROECTION };
-	this->VectorArray.push_back(line);
-
-	//Draw proections A velosity
-	//Offset (300,300)
-	Offset = CMatrix::SumVectors(Offset, CMatrix::Rotate(AB, betta), 1);
-	//Offset = CMatrix::SumVectors(Aparticle.pos, CMatrix::Rotate(AB, betta), 1);
-	V = Bparticle.V;
-	V = CMatrix::Rotate(V, betta);
-	V = CMatrix::ScaleVector(V, 2.1f);
-	V = CMatrix::SumVectors(V, Offset, 1);
-	line = { Offset ,V,PROECTION };
-	this->VectorArray.push_back(line);
-
-
-
 }

@@ -61,7 +61,8 @@ private:
 	};
 	WndButton btnA;
 
-	element Aparticle,Bparticle;
-	std::vector <rLine> VectorArray;
+	element Aparticle,Bparticle; // Temporary variables
+	rvector CurrentMPos;
+	std::vector <rLine> VectorArray; // Array with additional geometry for rendering
 	
 };
