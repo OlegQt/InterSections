@@ -27,7 +27,7 @@ CQuadTree::~CQuadTree()
 			this->storage.pop_back();
 			
 		}
-		MessageBox(NULL, L"QuadTree deleted", L"QuadTree destructor", NULL);
+		//MessageBox(NULL, L"QuadTree deleted", L"QuadTree destructor", NULL);
 
 	}
 }
@@ -65,7 +65,7 @@ bool CQuadTree::PutElementInLeaf(element * pE, bool check)
 			for (int i = 0; i < this->storage.size(); i++)
 			{
 				rvector AB = CMatrix::SumVectors(pE->pos, storage.at(i)->pos,-1);
-				if (CMatrix::GetVectorLength(AB) < pE->diameter * 1) return false;
+				if (CMatrix::GetVectorLength(AB) < pE->diameter * 2) return false;
 			}
 			storage.push_back(pE); // Push element to array end	
 			return true;

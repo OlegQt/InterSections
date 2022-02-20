@@ -152,10 +152,31 @@ LRESULT Engine::Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	if (message == WM_SIZE)
 	{
-		//this->DiscardDeviceResources();
 		this->ResizeTarget();
-
-
+	}
+	if (message == WM_MOUSEMOVE)
+	{
+		// Достаем координаты щелчка
+		float Xpos, Ypos;
+		Xpos = static_cast<float>LOWORD(lParam);
+		Ypos = static_cast<float>HIWORD(lParam);
+		this->pGameLogic->SetMousPos(Xpos, Ypos, MouseBehaviour::CURRENTMOUSEPOS);
+	}
+	if (message == WM_RBUTTONDOWN)
+	{
+		// Достаем координаты щелчка
+		float Xpos, Ypos;
+		Xpos = static_cast<float>LOWORD(lParam);
+		Ypos = static_cast<float>HIWORD(lParam);
+		this->pGameLogic->SetMousPos(Xpos, Ypos, RBUTTONDOWN);
+	}
+	if (message == WM_RBUTTONUP)
+	{
+		// Достаем координаты щелчка
+		float Xpos, Ypos;
+		Xpos = static_cast<float>LOWORD(lParam);
+		Ypos = static_cast<float>HIWORD(lParam);
+		this->pGameLogic->SetMousPos(Xpos, Ypos, RBUTTONUP);
 	}
 	if (message == WM_LBUTTONDOWN)
 	{
@@ -170,6 +191,7 @@ LRESULT Engine::Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		float Xpos, Ypos;
 		Xpos = static_cast<float>LOWORD(lParam);
 		Ypos = static_cast<float>HIWORD(lParam);
+		this->pGameLogic->SetMousPos(Xpos, Ypos, CURRENTMOUSEPOS);
 	}
 	if (message == WM_COMMAND)
 	{
@@ -225,6 +247,7 @@ HRESULT Engine::CreateTarget()
 		D2D1::HwndRenderTargetProperties(this->hWnd, size),
 		&this->pRenderTarget
 	);
+	// Pass window size to the quad tree firs leaf
 	this->pGameLogic->GetQTree()->SetBorder(rc);
 
 	if (SUCCEEDED(hr)) this->pRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -255,7 +278,7 @@ void Engine::ResizeTarget()
 HRESULT Engine::Render()
 {
 	this->VectorArray.clear();
-	this->CalcilateLogic();
+	//this->CalcilateLogic();
 	HRESULT hr = this->CreateTarget();
 	if (FAILED(hr)) return hr;
 	if (!m_pPathGeometry) return S_FALSE;
@@ -264,9 +287,9 @@ HRESULT Engine::Render()
 	this->pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	this->pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
 	// Draw here
-	this->RenderParticle(&this->Aparticle);
-	this->RenderParticle(&this->Bparticle);
+
 	this->RenderQTree(this->pGameLogic->GetQTree());
+	this->RenderParticle(pGameLogic->GetTemporaryElement());
 
 
 	for (int iter = 0; iter < VectorArray.size(); iter++)
@@ -295,7 +318,6 @@ HRESULT Engine::Render()
 }
 void Engine::RenderParticle(element* pE)
 {
-	// pE - pointer to Element
 	if (pE->mass == 0) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkRed));
 	this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), pE->diameter, pE->diameter), this->pBrush, 1.0f, NULL);
 }
@@ -331,6 +353,13 @@ void Engine::RenderQTree(CQuadTree * pTree)
 			D2D1_RECT_F rectangle1 = D2D1::RectF(pTree->GetBorder().left, pTree->GetBorder().top,
 				pTree->GetBorder().right,pTree->GetBorder().bottom);
 			this->pRenderTarget->DrawRectangle(rectangle1, this->pBrush, 3.0f, NULL);
+		}
+		if (true)
+		{
+			for (int iter = 0; iter < pTree->GetLoad(); iter++)
+			{
+				this->RenderParticle(pTree->GetElement(iter));
+			}
 		}
 	}
 }
