@@ -17,6 +17,7 @@ Engine::Engine(HINSTANCE h)
 
 
 	this->btnA = { 10,10,20,20 };
+	this->pGameLogic = new CLogic();
 
 	//code below should be in logic class
 	this->Aparticle.pos = { 50.0f,100.0f };
@@ -62,6 +63,7 @@ Engine::~Engine()
 		this->pSink->Release();
 		this->pSink = nullptr;
 	}
+	delete pGameLogic;
 }
 
 HRESULT Engine::Initialize()
@@ -223,6 +225,7 @@ HRESULT Engine::CreateTarget()
 		D2D1::HwndRenderTargetProperties(this->hWnd, size),
 		&this->pRenderTarget
 	);
+	this->pGameLogic->GetQTree()->SetBorder(rc);
 
 	if (SUCCEEDED(hr)) this->pRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 	if (SUCCEEDED(hr) && !pBrush) hr = pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &this->pBrush);
@@ -263,7 +266,7 @@ HRESULT Engine::Render()
 	// Draw here
 	this->RenderParticle(&this->Aparticle);
 	this->RenderParticle(&this->Bparticle);
-
+	this->RenderQTree(this->pGameLogic->GetQTree());
 
 
 	for (int iter = 0; iter < VectorArray.size(); iter++)
@@ -310,6 +313,26 @@ void Engine::RenderRline(rLine* pL)
 		D2D1::Point2F(pL->a.x, pL->a.y),
 		D2D1::Point2F(pL->b.x, pL->b.y),
 		this->pBrush, LineWidth, NULL);
+}
+void Engine::RenderQTree(CQuadTree * pTree)
+{
+	if (pTree->IsSubDevided())
+	{
+		RenderQTree(pTree->GetChild(0));
+		RenderQTree(pTree->GetChild(1));
+		RenderQTree(pTree->GetChild(2));
+		RenderQTree(pTree->GetChild(3));
+	}
+	else
+	{
+		if (true)
+		{
+			this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange));
+			D2D1_RECT_F rectangle1 = D2D1::RectF(pTree->GetBorder().left, pTree->GetBorder().top,
+				pTree->GetBorder().right,pTree->GetBorder().bottom);
+			this->pRenderTarget->DrawRectangle(rectangle1, this->pBrush, 3.0f, NULL);
+		}
+	}
 }
 
 void Engine::DiscardDeviceResources()

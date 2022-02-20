@@ -7,7 +7,6 @@ CQuadTree::CQuadTree()
 	for (int i = 0; i < 4; i++)
 	{
 		this->leaf[i] = nullptr;
-		this->ar[i] = nullptr;
 	}
 
 }
@@ -22,11 +21,14 @@ CQuadTree::~CQuadTree()
 	}
 	else
 	{
-		for (int i = 0; i < this->Load; i++)
+		while (this->storage.size())
 		{
-			delete(this->ar[0]);
-			this->ar[0] = nullptr;
+			delete this->storage.back();
+			this->storage.pop_back();
+			
 		}
+		MessageBox(NULL, L"QuadTree deleted", L"QuadTree destructor", NULL);
+
 	}
 }
 
@@ -167,7 +169,7 @@ bool CQuadTree::TransferAlltoLeafs(bool n)
 	return true;
 }
 
-
+// Check Functions
 bool CQuadTree::CheckTreeLeaf(CQuadTree* parent)
 {
 	// Проверяем все элементы внутри листа дерева
@@ -193,7 +195,7 @@ bool CQuadTree::CheckTreeLeaf(CQuadTree* parent)
 }
 bool CQuadTree::MergeLeafs()
 {
-	//if (!this->IsSubDevided()) return false;
+	if (!this->IsSubDevided()) return false;
 	int LOAD = 0;
 	bool flag = true;
 
@@ -203,7 +205,7 @@ bool CQuadTree::MergeLeafs()
 	// Merge them into one leaf 
 	for (int i = 0; i < 4; i++)
 	{
-		LOAD += this->leaf[i]->Load;
+		LOAD += this->leaf[i]->storage.size();
 		if (this->leaf[i]->IsSubDevided()) flag = false;
 	}
 	if (LOAD == 0 && flag)
@@ -261,6 +263,7 @@ bool CQuadTree::Subdivide()
 	}
 }
 
+// Get Functions
 RECT CQuadTree::GetBorder()
 {
 	return this->border;
@@ -269,12 +272,11 @@ CQuadTree* CQuadTree::GetChild(short n)
 {
 	return this->leaf[n];
 }
-
 int CQuadTree::GetLoad()
 {
-	return this->Load;
+	return this->storage.size();
 }
-CElement* CQuadTree::GetArrow(int num)
+element * CQuadTree::GetElement(int num)
 {
-	return this->ar[num];
+	return this->storage.at(num);
 }

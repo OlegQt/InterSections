@@ -6,6 +6,7 @@
 
 #include "CMatrix.h"
 #include "Element.h"
+#include "CLogic.h"
 
 #define ID_BUTTON_A 22
 #define TIMER1 1001
@@ -49,6 +50,7 @@ private:
 
 	void RenderParticle(element *);
 	void RenderRline(rLine * line);
+	void RenderQTree(CQuadTree * pTree);
 
 	struct WndButton
 	{
@@ -61,6 +63,7 @@ private:
 	};
 	WndButton btnA;
 
+	CLogic * pGameLogic;
 	element Aparticle,Bparticle; // Temporary variables
 	rvector CurrentMPos;
 	std::vector <rLine> VectorArray; // Array with additional geometry for rendering
