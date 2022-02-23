@@ -22,7 +22,6 @@ public:
 
 	// Process and dispatch messages
 	void RunMessageLoop();
-	void CalcilateLogic();
 
 	// The windows procedure.
 	static LRESULT CALLBACK WndProc(HWND hWnd,UINT message,WPARAM wParam,LPARAM lParam);
@@ -51,6 +50,7 @@ private:
 	void RenderParticle(element *);
 	void RenderRline(rLine * line);
 	void RenderQTree(CQuadTree * pTree);
+	void RenderAdditionalGeometry();
 
 	struct WndButton
 	{
@@ -64,8 +64,5 @@ private:
 	WndButton btnA;
 
 	CLogic * pGameLogic;
-	element Aparticle,Bparticle; // Temporary variables
-	rvector CurrentMPos;
-	std::vector <rLine> VectorArray; // Array with additional geometry for rendering
 	
 };

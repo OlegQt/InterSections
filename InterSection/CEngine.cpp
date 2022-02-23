@@ -19,16 +19,6 @@ Engine::Engine(HINSTANCE h)
 	this->btnA = { 10,10,20,20 };
 	this->pGameLogic = new CLogic();
 
-	//code below should be in logic class
-	this->Aparticle.pos = { 50.0f,100.0f };
-	this->Aparticle.V = { 0.9f,0.0f };
-	this->Aparticle.diameter = 4;
-	this->Aparticle.mass = 4;
-
-	this->Bparticle.pos = { 120.0f,100.0f };
-	this->Bparticle.V = { 0.0f,0.0f };
-	this->Bparticle.diameter = 20;
-	this->Bparticle.mass = 50;
 }
 Engine::~Engine()
 {
@@ -154,21 +144,14 @@ LRESULT Engine::Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		this->ResizeTarget();
 	}
-	if (message == WM_MOUSEMOVE)
-	{
-		// Достаем координаты щелчка
-		float Xpos, Ypos;
-		Xpos = static_cast<float>LOWORD(lParam);
-		Ypos = static_cast<float>HIWORD(lParam);
-		this->pGameLogic->SetMousPos(Xpos, Ypos, MouseBehaviour::CURRENTMOUSEPOS);
-	}
+
 	if (message == WM_RBUTTONDOWN)
 	{
 		// Достаем координаты щелчка
 		float Xpos, Ypos;
 		Xpos = static_cast<float>LOWORD(lParam);
 		Ypos = static_cast<float>HIWORD(lParam);
-		this->pGameLogic->SetMousPos(Xpos, Ypos, RBUTTONDOWN);
+		this->pGameLogic->RbuttonDown(Xpos, Ypos);
 	}
 	if (message == WM_RBUTTONUP)
 	{
@@ -176,7 +159,7 @@ LRESULT Engine::Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		float Xpos, Ypos;
 		Xpos = static_cast<float>LOWORD(lParam);
 		Ypos = static_cast<float>HIWORD(lParam);
-		this->pGameLogic->SetMousPos(Xpos, Ypos, RBUTTONUP);
+		this->pGameLogic->RbuttonUp(Xpos, Ypos);
 	}
 	if (message == WM_LBUTTONDOWN)
 	{
@@ -191,7 +174,7 @@ LRESULT Engine::Procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		float Xpos, Ypos;
 		Xpos = static_cast<float>LOWORD(lParam);
 		Ypos = static_cast<float>HIWORD(lParam);
-		this->pGameLogic->SetMousPos(Xpos, Ypos, CURRENTMOUSEPOS);
+		this->pGameLogic->RMouseMoove(Xpos, Ypos);
 	}
 	if (message == WM_COMMAND)
 	{
@@ -277,8 +260,6 @@ void Engine::ResizeTarget()
 
 HRESULT Engine::Render()
 {
-	this->VectorArray.clear();
-	//this->CalcilateLogic();
 	HRESULT hr = this->CreateTarget();
 	if (FAILED(hr)) return hr;
 	if (!m_pPathGeometry) return S_FALSE;
@@ -287,15 +268,12 @@ HRESULT Engine::Render()
 	this->pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	this->pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
 	// Draw here
-
 	this->RenderQTree(this->pGameLogic->GetQTree());
+	this->RenderAdditionalGeometry();
 	this->RenderParticle(pGameLogic->GetTemporaryElement());
-
-
-	for (int iter = 0; iter < VectorArray.size(); iter++)
-	{
-		this->RenderRline(&VectorArray.at(iter));
-	}
+	this->RenderAdditionalGeometry();
+	this->pGameLogic->clearAdditionalGeometry();
+	
 	// GUI Drawings	
 	if (true)
 	{
@@ -306,7 +284,6 @@ HRESULT Engine::Render()
 		this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
 		this->pRenderTarget->DrawRectangle(btnRect, this->pBrush, 2.0f, NULL);
 	}
-
 	// up to this end
 	hr = this->pRenderTarget->EndDraw();
 	if (hr == D2DERR_RECREATE_TARGET)
@@ -316,10 +293,23 @@ HRESULT Engine::Render()
 	}
 	return S_OK;
 }
+
+void Engine::RenderAdditionalGeometry()
+{
+	for (int iter = 0; iter < this->pGameLogic->getGeometryPointer()->size(); iter++)
+	{
+		this->RenderRline(&pGameLogic->getGeometryPointer()->at(iter));
+	}
+	//this->pGameLogic->clearAdditionalGeometry();
+}
 void Engine::RenderParticle(element* pE)
 {
-	if (pE->mass == 0) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkRed));
-	this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), pE->diameter, pE->diameter), this->pBrush, 1.0f, NULL);
+	if (pE)
+	{
+		if (pE->mass == 0) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkRed));
+		else this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
+		this->pRenderTarget->DrawEllipse(D2D1::Ellipse(D2D1::Point2F(pE->pos.x, pE->pos.y), pE->radius, pE->radius), this->pBrush, 1.0f, NULL);
+	}
 }
 void Engine::RenderRline(rLine* pL)
 {
@@ -331,12 +321,17 @@ void Engine::RenderRline(rLine* pL)
 	}
 	else if (pL->type == VELOCITY) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::DarkBlue));
 	else if (pL->type == PROECTION) this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
+	else if (pL->type == NEWELEMENT)
+	{
+		LineWidth = 3.0f;
+		this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::RosyBrown));
+	}
 	this->pRenderTarget->DrawLine(
 		D2D1::Point2F(pL->a.x, pL->a.y),
 		D2D1::Point2F(pL->b.x, pL->b.y),
 		this->pBrush, LineWidth, NULL);
 }
-void Engine::RenderQTree(CQuadTree * pTree)
+void Engine::RenderQTree(CQuadTree* pTree)
 {
 	if (pTree->IsSubDevided())
 	{
@@ -351,13 +346,19 @@ void Engine::RenderQTree(CQuadTree * pTree)
 		{
 			this->pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange));
 			D2D1_RECT_F rectangle1 = D2D1::RectF(pTree->GetBorder().left, pTree->GetBorder().top,
-				pTree->GetBorder().right,pTree->GetBorder().bottom);
+				pTree->GetBorder().right, pTree->GetBorder().bottom);
 			this->pRenderTarget->DrawRectangle(rectangle1, this->pBrush, 3.0f, NULL);
 		}
 		if (true)
 		{
 			for (int iter = 0; iter < pTree->GetLoad(); iter++)
 			{
+
+				for (int diff = iter + 1; diff < pTree->GetLoad(); diff++)
+				{
+					this->pGameLogic->CheckCollusions(pTree->GetElement(iter), pTree->GetElement(diff));
+				}
+				this->pGameLogic->MooveElement(pTree->GetElement(iter));
 				this->RenderParticle(pTree->GetElement(iter));
 			}
 		}
@@ -391,80 +392,4 @@ void Engine::DiscardDeviceResources()
 		this->pSink->Release();
 		this->pSink = nullptr;
 	}
-}
-void Engine::CalcilateLogic()
-{
-
-	rvector AB{ 0,0 };
-	rvector V{ 0,0 };
-	rvector Offset{ 0,0 };
-	float betta = 0;
-	rLine line;
-
-	AB = CMatrix::SumVectors(Aparticle.pos, Bparticle.pos, -1);
-	if (btnA.pushed)
-	{
-
-		if (CMatrix::GetVectorLength(AB) <= Aparticle.diameter + Bparticle.diameter + 0.0f)
-		{
-
-			betta = CMatrix::GetAngle(AB, { 1.0f,0.0f }); // Calculate angle between radius vector from A-point ro B-point and OX axis
-			rvector Va = Aparticle.V; // Take the real velocity  vector in real OXY
-			rvector Vb = Bparticle.V; // Take the real velocity vector in real OXY
-			Va = CMatrix::Rotate(Va, betta); // Rotate velocity (x component is the proection the real velocity on the AB-vector)
-			Vb = CMatrix::Rotate(Vb, betta); // Rotate velocity (x component is the proection the real velocity on the AB-vector)
-
-			float DeltaMass = Bparticle.mass - Aparticle.mass;
-			float SummMass = Bparticle.mass + Aparticle.mass;
-			float Vax = (2 * Bparticle.mass * Vb.x - Va.x * DeltaMass) / SummMass; // Calculate Vx for A-particle after collusion
-			float Vbx = (2 * Aparticle.mass * Va.x + Vb.x * DeltaMass) / SummMass; // Calculate Vx for B-particle after collusion
-			Va.x = Vax;
-			Vb.x = Vbx;
-
-			Aparticle.V = CMatrix::Rotate(Va, -betta); // Rotate back to take new velocities after collusion
-			Bparticle.V = CMatrix::Rotate(Vb, -betta); // Rotate back to take new velocities after collusion
-
-			// If both particles stuck in each others
-			// Calculate the overlay distance and moove each particl with its new speed on the half of this distancce
-			
-			float delta = CMatrix::GetVectorLength(AB) - (Aparticle.diameter + Bparticle.diameter); // Calculate the overlay
-			if (delta < 1.0f) delta = 1.0f;
-			float time = (0.5f * delta) / CMatrix::GetVectorLength(Aparticle.V); //Calculate time to moove from stuck
-
-		
-			Aparticle.pos.x = Aparticle.pos.x + (time * Aparticle.V.x); 
-			Aparticle.pos.y = Aparticle.pos.y + (time * Aparticle.V.y);
-
-			Bparticle.pos.x = Bparticle.pos.x + (time * Bparticle.V.x);
-			Bparticle.pos.y = Bparticle.pos.y + (time * Bparticle.V.y);
-		}
-		else
-		{
-			this->Aparticle.pos.x += Aparticle.V.x;
-			this->Aparticle.pos.y += Aparticle.V.y;
-
-			this->Bparticle.pos.x += Bparticle.V.x;
-			this->Bparticle.pos.y += Bparticle.V.y;
-		}
-	}
-
-
-
-	line = { Bparticle.pos,Aparticle.pos ,BOND };
-	this->VectorArray.push_back(line);
-
-
-	V = Aparticle.V;
-	Offset = Aparticle.pos;
-	V = CMatrix::ScaleVector(V, 2.1f);
-	V = CMatrix::SumVectors(V, Offset, 1);
-	line = { Offset ,V,VELOCITY };
-	this->VectorArray.push_back(line);
-
-	V = Bparticle.V;
-	Offset = Bparticle.pos;
-	V = CMatrix::ScaleVector(V, 2.1f);
-	V = CMatrix::SumVectors(V, Offset, 1);
-	line = { Offset ,V,VELOCITY };
-	this->VectorArray.push_back(line);
 }

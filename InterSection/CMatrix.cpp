@@ -2,14 +2,13 @@
 CMatrix::CMatrix() {}
 CMatrix::~CMatrix() {}
 
-
 rvector CMatrix::Rotate(rvector a, float angle)
 {
 	//”множаем вектор на матрицу поворота вокруг орты Z
 	//x` = x * cos(angle) - y * sin(angle);
 	//y` = x * sin(angle) + y * cos(angle);
 	angle = angle * PI / 180;
-	float x = a.x * cos(angle) - a.y * sin(angle);
+	float x = a.x * static_cast<float>(cos(angle)) - a.y * static_cast<float>(sin(angle));
 	float y = a.x * sin(angle) + a.y * cos(angle);
 	return rvector{ x,y };
 }

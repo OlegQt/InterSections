@@ -2,7 +2,6 @@
 #include "CQuadTree.h"
 
 
-
 enum MouseBehaviour
 {
 	CURRENTMOUSEPOS,
@@ -20,11 +19,23 @@ public:
 	CQuadTree* GetQTree();
 	element* GetTemporaryElement();
 
-	void SetMousPos(float x, float y, int pos);
-	void PutInQTree();
+	std::vector<rLine>* getGeometryPointer();
+	void clearAdditionalGeometry();
 
+
+	void RbuttonDown(float, float);
+	void RbuttonUp(float, float);
+	void RMouseMoove(float, float);
+
+
+	void PutInQTree();
+	void CheckCollusions(element*, element*);
+	void MooveElement(element*);
+
+
+	int MouseStatus;
 public:
-	int MouseBehaveour;
+
 private:
 	CQuadTree* qTree;
 	element* TemporaryEl;
@@ -32,5 +43,6 @@ private:
 	rvector mousCurrentPos;
 
 
+	std::vector <rLine> VectorArray; // Array with additional geometry for rendering
 };
 

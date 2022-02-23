@@ -5,7 +5,8 @@ enum LineTypes
 	FORSE,
 	VELOCITY,
 	BOND,
-	PROECTION
+	PROECTION,
+	NEWELEMENT
 };
 
 struct rvector {
@@ -19,5 +20,5 @@ struct rLine {
 struct element {
 	rvector pos;
 	rvector V;
-	float mass,diameter;
+	float mass,radius;
 };
